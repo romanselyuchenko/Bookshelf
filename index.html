@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Генератор Книжной Полки</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <h1>Генератор Книжной Полки</h1>
+
+  <!-- Фон -->
+  <div class="upload-section">
+    <label for="bg-upload">Добавить полку (фон):</label>
+    <div class="upload-field">
+      <input type="file" id="bg-upload" accept="image/*">
+    </div>
+  </div>
+
+  <!-- Книги -->
+  <div id="book-upload-section" class="upload-section">
+    <label>Добавить книгу 1:</label>
+    <div class="upload-field">
+      <input type="file" accept="image/*" class="book-upload">
+    </div>
+  </div>
+
+  <!-- Кнопка добавления книги -->
+  <button id="add-book-btn" class="add-book-btn">+ Книга</button>
+
+  <!-- Кнопка генерации -->
+  <button id="generate-btn" class="generate-btn">Сгенерировать книжную полку</button>
+
+  <!-- Место для ссылки на скачивание -->
+  <div id="download-link-container"></div>
+
+  <!-- Скрипты -->
+  <script src="/static/scripts.js"></script>
+</body>
+</html>
