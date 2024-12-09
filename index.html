@@ -3,15 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Генератор Книжной Полки</title>
+  <title>Твоя книжная полка</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <h1>Генератор Книжной Полки</h1>
+  <h1>Генератор Полки</h1>
 
-  <!-- Фон -->
-  <div class="upload-section">
-    <label for="bg-upload">Добавить полку (фон):</label>
+  <!-- Кнопка для выбора размера -->
+  <div id="size-buttons">
+    <button id="size-btn-1280" class="size-btn">1280x720</button>
+    <button id="size-btn-1600" class="size-btn">1600x900</button>
+    <button id="size-btn-1920" class="size-btn">1920x1080</button>
+    <button id="size-btn-2560" class="size-btn">2560x1440</button>
+  </div>
+
+  <!-- Фон (изначально скрыт) -->
+  <div id="bg-upload-section" class="upload-section" style="display: none;">
+    <label for="bg-upload">Добавить полку (фон) <span id="bg-resolution"></span>:</label>
     <div class="upload-field">
       <input type="file" id="bg-upload" accept="image/*">
     </div>
@@ -34,7 +42,7 @@
   <!-- Место для ссылки на скачивание -->
   <div id="download-link-container"></div>
 
-  <!-- Скрипты -->
+  <!-- Скрипты (перенесены в конец) -->
   <script src="/static/scripts.js"></script>
 </body>
 </html>

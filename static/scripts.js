@@ -1,10 +1,10 @@
+console.log("Скрипт загружен");
 let bookCount = 1;
 
 // Функция добавления полей для книг
 document.getElementById('add-book-btn').addEventListener('click', function () {
   bookCount++;
 
-  // Создание нового блока загрузки книги
   const bookUploadSection = document.getElementById('book-upload-section');
   const newBookField = document.createElement('div');
   newBookField.classList.add('upload-field');
@@ -12,7 +12,7 @@ document.getElementById('add-book-btn').addEventListener('click', function () {
     <label>Добавить книгу ${bookCount}:</label>
     <input type="file" accept="image/*" class="book-upload">
   `;
-  bookUploadSection.appendChild(newBookField); // Добавляем снизу
+  bookUploadSection.appendChild(newBookField);
 });
 
 // Функция генерации изображения (отправка данных на сервер)
@@ -30,7 +30,6 @@ document.getElementById('generate-btn').addEventListener('click', async function
     return;
   }
 
-  // Формируем данные для отправки
   const formData = new FormData();
   formData.append('background', bgFile);
   bookFiles.forEach((input, index) => {
@@ -39,7 +38,6 @@ document.getElementById('generate-btn').addEventListener('click', async function
     }
   });
 
-  // Отправка данных на сервер
   try {
     const response = await fetch('http://127.0.0.1:8000/upload/', {
       method: 'POST',
@@ -47,13 +45,11 @@ document.getElementById('generate-btn').addEventListener('click', async function
     });
     if (!response.ok) throw new Error('Ошибка при генерации изображения');
 
-    // Получаем сгенерированное изображение
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
 
-    // Отображение ссылки на скачивание изображения
     const linkContainer = document.getElementById('download-link-container');
-    linkContainer.innerHTML = ''; // Очищаем контейнер
+    linkContainer.innerHTML = '';
     const link = document.createElement('a');
     link.href = url;
     link.download = 'bookshelf.png';
@@ -62,4 +58,20 @@ document.getElementById('generate-btn').addEventListener('click', async function
   } catch (error) {
     alert(error.message);
   }
+});
+
+// Функция для отображения поля загрузки фона
+document.addEventListener('DOMContentLoaded', function () {
+  console.log("Скрипт загружен");
+
+  document.querySelectorAll('.size-btn').forEach(button => {
+    button.addEventListener('click', function () {
+      const resolution = this.textContent;
+      const bgUploadSection = document.getElementById('bg-upload-section');
+      const bgResolution = document.getElementById('bg-resolution');
+      
+      bgResolution.textContent = resolution;
+      bgUploadSection.style.display = 'block';
+    });
+  });
 });
