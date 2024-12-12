@@ -27,23 +27,33 @@ CANVAS_HEIGHT = 1080
 @app.post("/upload/")
 async def upload_files(background: UploadFile = File(...), 
                        book1: UploadFile = File(...), 
-                       book2: UploadFile = File(None),
+                       book2: UploadFile = File(None), 
                        book3: UploadFile = File(None),
-                       book4: UploadFile = File(None)):
+                       book4: UploadFile = File(None),
+                       book5: UploadFile = File(None),
+                       book6: UploadFile = File(None),
+                       book7: UploadFile = File(None),
+                       book8: UploadFile = File(None)):
     # Читаем фон
+    if background is None:
+        return {"error": "Фон не загружен"}
+
     background_image = Image.open(io.BytesIO(await background.read())).convert("RGBA")
     background_image = background_image.resize((CANVAS_WIDTH, CANVAS_HEIGHT))
 
     # Список книг
-    book_files = [book1, book2, book3, book4]
+    book_files = [book1, book2, book3, book4, book5, book6, book7, book8]
     books = []
 
     # Обрабатываем каждую загруженную книгу
     for book_file in book_files:
         if book_file is not None:
             book_image = Image.open(io.BytesIO(await book_file.read())).convert("RGBA")
-            book_image = book_image.resize((BOOK_WIDTH, BOOK_HEIGHT))
             books.append(book_image)
+
+    # Проверка на наличие хотя бы одной книги
+    if not books:
+        return {"error": "Добавьте хотя бы одну книгу"}
 
     # Размещение книг на полке
     result_image = background_image.copy()
