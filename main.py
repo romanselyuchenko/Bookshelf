@@ -33,13 +33,34 @@ async def upload_files(background: UploadFile = File(...),
                        book5: UploadFile = File(None),
                        book6: UploadFile = File(None),
                        book7: UploadFile = File(None),
-                       book8: UploadFile = File(None)):
+                       book8: UploadFile = File(None),
+                       resolution: str = Form('1920x1080')):  # Значение по умолчанию
+    # Определяем размеры на основе выбранного разрешения
+    if resolution == '1280x720':
+        canvas_width, canvas_height = 1280, 720
+    elif resolution == '1600x900':
+        canvas_width, canvas_height = 1600, 900
+    elif resolution == '2560x1440':
+        canvas_width, canvas_height = 2560, 1440
+    else:  # По умолчанию 1920x1080
+        canvas_width, canvas_height = 1920, 1080
+
     # Читаем фон
     if background is None:
         return {"error": "Фон не загружен"}
 
     background_image = Image.open(io.BytesIO(await background.read())).convert("RGBA")
-    background_image = background_image.resize((CANVAS_WIDTH, CANVAS_HEIGHT))
+    bg_width, bg_height = background_image.size
+
+    # Проверка на допустимый размер с погрешностью 15%
+    width_tolerance = canvas_width * 0.15
+    height_tolerance = canvas_height * 0.15
+
+    if not (canvas_width - width_tolerance <= bg_width <= canvas_width + width_tolerance) or \
+       not (canvas_height - height_tolerance <= bg_height <= canvas_height + height_tolerance):
+        return {"error": f"Размер фона должен быть около {canvas_width}x{canvas_height} пикселей с погрешностью 15%."}
+
+    background_image = background_image.resize((canvas_width, canvas_height))
 
     # Список книг
     book_files = [book1, book2, book3, book4, book5, book6, book7, book8]
@@ -58,10 +79,10 @@ async def upload_files(background: UploadFile = File(...),
     # Размещение книг на полке
     result_image = background_image.copy()
     rows = 3  # Количество рядов
-    cols = CANVAS_WIDTH // BOOK_WIDTH  # Максимальное число книг в ряду
+    cols = canvas_width // BOOK_WIDTH  # Максимальное число книг в ряду
 
-    x_offset = CANVAS_WIDTH - BOOK_WIDTH  # Начинаем с правого края
-    y_offset = CANVAS_HEIGHT - BOOK_HEIGHT  # Начинаем с нижнего ряда
+    x_offset = canvas_width - BOOK_WIDTH  # Начинаем с правого края
+    y_offset = canvas_height - BOOK_HEIGHT  # Начинаем с нижнего ряда
 
     for idx, book in enumerate(books):
         # Добавляем книгу на изображение
@@ -72,7 +93,7 @@ async def upload_files(background: UploadFile = File(...),
 
         # Если ряд заполнен, переходим на следующий
         if x_offset < 0:
-            x_offset = CANVAS_WIDTH - BOOK_WIDTH  # Снова начинаем с правого края
+            x_offset = canvas_width - BOOK_WIDTH  # Снова начинаем с правого края
             y_offset -= BOOK_HEIGHT  # Переходим на следующий ряд
 
         # Проверяем, если ряды закончились

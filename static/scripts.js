@@ -25,6 +25,10 @@ document.getElementById('add-book-btn').addEventListener('click', function () {
 document.getElementById('generate-btn').addEventListener('click', async function () {
   const bgFile = document.getElementById('bg-upload').files[0];
   const bookFiles = document.querySelectorAll('.book-upload');
+  
+  // Получаем выбранный размер
+  const selectedResolution = document.querySelector('.size-btn.selected');
+  const resolution = selectedResolution ? selectedResolution.textContent : '1920x1080'; // Значение по умолчанию
 
   if (!bgFile) {
     errorMessageDiv.textContent = "Пожалуйста, загрузите фон.";
@@ -33,6 +37,7 @@ document.getElementById('generate-btn').addEventListener('click', async function
 
   const formData = new FormData();
   formData.append('background', bgFile);
+  formData.append('resolution', resolution); // Добавляем выбранное разрешение
   let validImages = true; // Флаг для проверки валидности изображений
   errorMessageDiv.textContent = ''; // Сбрасываем сообщение об ошибке
 
@@ -120,12 +125,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('.size-btn').forEach(button => {
     button.addEventListener('click', function () {
-      const resolution = this.textContent;
-      const bgUploadSection = document.getElementById('bg-upload-section');
-      const bgResolution = document.getElementById('bg-resolution');
-      
-      bgResolution.textContent = resolution;
-      bgUploadSection.style.display = 'block';
+      document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('selected'));
+      this.classList.add('selected'); // Устанавливаем класс для выбранной кнопки
     });
   });
 });
