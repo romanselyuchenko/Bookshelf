@@ -5,15 +5,25 @@ from PIL import Image
 import io
 import os
 from uuid import uuid4
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Добавляем middleware для отключения кеширования
+@app.middleware("http")
+async def add_no_cache_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 # Папка для сохранения временных файлов
 OUTPUT_DIR = "generated"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Настройка статических файлов
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Настройка статических файлов с отключенным кешированием
+app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
 # Размеры книги
 BOOK_WIDTH = 240
