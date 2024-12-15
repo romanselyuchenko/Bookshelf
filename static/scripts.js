@@ -1,13 +1,49 @@
-console.log("Скрипт загружен");
+// Проверка размера фона
+const bgErrorMessageDiv = document.createElement('div');
+bgErrorMessageDiv.style.color = 'red';
+bgErrorMessageDiv.style.marginTop = '10px';
+
+const bgUploadSection = document.getElementById('bg-upload-section');
+bgUploadSection.appendChild(bgErrorMessageDiv);
+
+document.getElementById('bg-upload').addEventListener('change', function () {
+  const file = this.files[0];
+  if (file) {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.src = e.target.result;
+      img.onload = () => {
+        const selectedResolution = document.querySelector('.size-btn.selected')?.textContent || '1920x1080';
+        const [expectedWidth, expectedHeight] = selectedResolution.split('x').map(Number);
+
+        const widthTolerance = expectedWidth * 0.15;
+        const heightTolerance = expectedHeight * 0.15;
+
+        if (
+          img.width < expectedWidth - widthTolerance ||
+          img.width > expectedWidth + widthTolerance ||
+          img.height < expectedHeight - heightTolerance ||
+          img.height > expectedHeight + heightTolerance
+        ) {
+          bgErrorMessageDiv.textContent = `Добавьте изображение размером около ${expectedWidth}x${expectedHeight}.`;
+        } else {
+          bgErrorMessageDiv.textContent = '';
+        }
+      };
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+const bookErrorMessageDiv = document.createElement('div');
+bookErrorMessageDiv.style.color = 'red';
+bookErrorMessageDiv.style.marginTop = '10px';
+document.body.insertBefore(bookErrorMessageDiv, document.getElementById('generate-btn').nextSibling);
+
 let bookCount = 1;
 
-// Создаем элемент для отображения сообщений об ошибках
-const errorMessageDiv = document.createElement('div');
-errorMessageDiv.style.color = 'red'; // Устанавливаем цвет текста
-errorMessageDiv.style.marginTop = '10px'; // Отступ сверху
-document.body.insertBefore(errorMessageDiv, document.getElementById('generate-btn').nextSibling);
-
-// Функция добавления полей для книг
 document.getElementById('add-book-btn').addEventListener('click', function () {
   bookCount++;
 
@@ -21,29 +57,20 @@ document.getElementById('add-book-btn').addEventListener('click', function () {
   bookUploadSection.appendChild(newBookField);
 });
 
-// Функция генерации изображения (отправка данных на сервер)
-document.getElementById('generate-btn').addEventListener('click', async function () {
+async function validateAndUploadBooks() {
   const bgFile = document.getElementById('bg-upload').files[0];
   const bookFiles = document.querySelectorAll('.book-upload');
-  
-  // Получаем выбранный размер
-  const selectedResolution = document.querySelector('.size-btn.selected');
-  const resolution = selectedResolution ? selectedResolution.textContent : '1920x1080'; // Значение по умолчанию
+  const BOOK_WIDTH = 240;
+  const BOOK_HEIGHT = 360;
+  const expectedAspectRatio = BOOK_WIDTH / BOOK_HEIGHT;
 
   if (!bgFile) {
-    errorMessageDiv.textContent = "Пожалуйста, загрузите фон.";
+    bookErrorMessageDiv.textContent = "Пожалуйста, загрузите фон.";
     return;
   }
 
-  const formData = new FormData();
-  formData.append('background', bgFile);
-  formData.append('resolution', resolution); // Добавляем выбранное разрешение
-  let validImages = true; // Флаг для проверки валидности изображений
-  errorMessageDiv.textContent = ''; // Сбрасываем сообщение об ошибке
-
-  const BOOK_WIDTH = 240; // Задайте ваши размеры
-  const BOOK_HEIGHT = 360;
-  const expectedAspectRatio = BOOK_WIDTH / BOOK_HEIGHT;
+  let validImages = true;
+  bookErrorMessageDiv.textContent = '';
 
   for (let index = 0; index < bookFiles.length; index++) {
     const input = bookFiles[index];
@@ -55,78 +82,48 @@ document.getElementById('generate-btn').addEventListener('click', async function
       reader.onload = (e) => {
         img.src = e.target.result;
         img.onload = () => {
-          // Проверка соотношения сторон изображения
           const width = img.width;
           const height = img.height;
           const actualAspectRatio = width / height;
 
-          // Допустимое отклонение соотношения сторон (например, ±10%)
-          const aspectRatioTolerance = 0.15; // Вы можете изменить это значение на ваше усмотрение
+          const aspectRatioTolerance = 0.15;
           const lowerBound = expectedAspectRatio * (1 - aspectRatioTolerance);
           const upperBound = expectedAspectRatio * (1 + aspectRatioTolerance);
 
           if (actualAspectRatio < lowerBound || actualAspectRatio > upperBound) {
-            errorMessageDiv.textContent = `Неподходящее соотношение сторон книги № ${index + 1}. Ожидается соотношение около ${BOOK_WIDTH}:${BOOK_HEIGHT}.`;
-            validImages = false; // Установите флаг в false
-          } else {
-            // Изменение размера изображения перед добавлением в FormData
-            const canvas = document.createElement('canvas');
-            canvas.width = BOOK_WIDTH;
-            canvas.height = BOOK_HEIGHT;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, BOOK_WIDTH, BOOK_HEIGHT);
-            canvas.toBlob((blob) => {
-              formData.append(`book${index + 1}`, blob); // Добавляем измененное изображение в FormData
-            }, 'image/png');
+            bookErrorMessageDiv.textContent = `Неподходящее соотношение сторон книги № ${index + 1}. Ожидается соотношение около ${BOOK_WIDTH}:${BOOK_HEIGHT}.`;
+            validImages = false;
           }
         };
       };
-
       reader.readAsDataURL(file);
     }
   }
 
-  // Ждем, пока все изображения будут проверены
   await new Promise(resolve => setTimeout(resolve, 1000));
+  if (!validImages) return;
+}
 
-  if (!validImages) {
-    return; // Если есть недопустимые изображения, не отправляем форму
-  }
+document.getElementById('generate-btn').addEventListener('click', validateAndUploadBooks);
 
-  // Отправка формы, если все изображения валидны
-  try {
-    const response = await fetch('http://127.0.0.1:8000/upload/', {
-      method: 'POST',
-      body: formData,
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error);
+document.querySelectorAll('.size-btn').forEach(button => {
+  button.addEventListener('click', function() {
+    // Удаляем класс selected у всех кнопок
+    document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('selected'));
+    // Добавляем класс selected текущей кнопке
+    this.classList.add('selected');
+    
+    // Показываем секцию загрузки фона
+    const bgUploadSection = document.getElementById('bg-upload-section');
+    bgUploadSection.style.display = 'block';
+    
+    // Очищаем сообщение об ошибке
+    bgErrorMessageDiv.textContent = '';
+    
+    // Если уже есть загруженный файл фона, проверяем его размер заново
+    const bgUpload = document.getElementById('bg-upload');
+    if (bgUpload.files[0]) {
+      bgUpload.dispatchEvent(new Event('change'));
     }
-
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-
-    const linkContainer = document.getElementById('download-link-container');
-    linkContainer.innerHTML = '';
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'bookshelf.png';
-    link.textContent = 'Скачать сгенерированное изображение';
-    linkContainer.appendChild(link);
-  } catch (error) {
-    errorMessageDiv.textContent = error.message; // Выводим сообщение об ошибке на странице
-  }
-});
-
-// Функция для отображения поля загрузки фона
-document.addEventListener('DOMContentLoaded', function () {
-  console.log("Скрипт загружен");
-
-  document.querySelectorAll('.size-btn').forEach(button => {
-    button.addEventListener('click', function () {
-      document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('selected'));
-      this.classList.add('selected'); // Устанавливаем класс для выбранной кнопки
-    });
   });
 });
