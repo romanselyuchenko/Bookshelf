@@ -44,6 +44,38 @@ document.body.insertBefore(bookErrorMessageDiv, document.getElementById('generat
 
 let bookCount = 1;
 
+function validateBookSize(file, index) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+    const BOOK_WIDTH = 240;
+    const BOOK_HEIGHT = 360;
+    const expectedAspectRatio = BOOK_WIDTH / BOOK_HEIGHT;
+
+    reader.onload = (e) => {
+      img.src = e.target.result;
+      img.onload = () => {
+        const width = img.width;
+        const height = img.height;
+        const actualAspectRatio = width / height;
+
+        const aspectRatioTolerance = 0.15;
+        const lowerBound = expectedAspectRatio * (1 - aspectRatioTolerance);
+        const upperBound = expectedAspectRatio * (1 + aspectRatioTolerance);
+
+        if (actualAspectRatio < lowerBound || actualAspectRatio > upperBound) {
+          bookErrorMessageDiv.textContent = `Неподходящее соотношение сторон книги № ${index + 1}. Ожидается соотношение около ${BOOK_WIDTH}:${BOOK_HEIGHT}.`;
+          resolve(false);
+        } else {
+          bookErrorMessageDiv.textContent = '';
+          resolve(true);
+        }
+      };
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 document.getElementById('add-book-btn').addEventListener('click', function () {
   bookCount++;
 
@@ -55,14 +87,24 @@ document.getElementById('add-book-btn').addEventListener('click', function () {
     <input type="file" accept="image/*" class="book-upload">
   `;
   bookUploadSection.appendChild(newBookField);
+
+  const newInput = newBookField.querySelector('.book-upload');
+  newInput.addEventListener('change', function() {
+    if (this.files[0]) {
+      validateBookSize(this.files[0], bookCount - 1);
+    }
+  });
+});
+
+document.querySelector('.book-upload').addEventListener('change', function() {
+  if (this.files[0]) {
+    validateBookSize(this.files[0], 0);
+  }
 });
 
 async function validateAndUploadBooks() {
   const bgFile = document.getElementById('bg-upload').files[0];
   const bookFiles = document.querySelectorAll('.book-upload');
-  const BOOK_WIDTH = 240;
-  const BOOK_HEIGHT = 360;
-  const expectedAspectRatio = BOOK_WIDTH / BOOK_HEIGHT;
 
   if (!bgFile) {
     bookErrorMessageDiv.textContent = "Пожалуйста, загрузите фон.";
@@ -75,33 +117,16 @@ async function validateAndUploadBooks() {
   for (let index = 0; index < bookFiles.length; index++) {
     const input = bookFiles[index];
     if (input.files[0]) {
-      const file = input.files[0];
-      const img = new Image();
-      const reader = new FileReader();
-
-      reader.onload = (e) => {
-        img.src = e.target.result;
-        img.onload = () => {
-          const width = img.width;
-          const height = img.height;
-          const actualAspectRatio = width / height;
-
-          const aspectRatioTolerance = 0.15;
-          const lowerBound = expectedAspectRatio * (1 - aspectRatioTolerance);
-          const upperBound = expectedAspectRatio * (1 + aspectRatioTolerance);
-
-          if (actualAspectRatio < lowerBound || actualAspectRatio > upperBound) {
-            bookErrorMessageDiv.textContent = `Неподходящее соотношение сторон книги № ${index + 1}. Ожидается соотношение около ${BOOK_WIDTH}:${BOOK_HEIGHT}.`;
-            validImages = false;
-          }
-        };
-      };
-      reader.readAsDataURL(file);
+      const isValid = await validateBookSize(input.files[0], index);
+      if (!isValid) {
+        validImages = false;
+        break;
+      }
     }
   }
 
-  await new Promise(resolve => setTimeout(resolve, 1000));
   if (!validImages) return;
+  // Здесь можно добавить код для отправки формы
 }
 
 document.getElementById('generate-btn').addEventListener('click', validateAndUploadBooks);
