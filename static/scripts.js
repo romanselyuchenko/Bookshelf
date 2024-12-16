@@ -126,7 +126,47 @@ async function validateAndUploadBooks() {
   }
 
   if (!validImages) return;
-  // Здесь можно добавить код для отправки формы
+
+  // Создаем FormData для отправки файлов
+  const formData = new FormData();
+  formData.append('background', bgFile);
+  
+  // Добавляем книги
+  bookFiles.forEach((input, index) => {
+    if (input.files[0]) {
+      formData.append(`book${index + 1}`, input.files[0]);
+    }
+  });
+
+  // Добавляем выбранное разрешение
+  const selectedResolution = document.querySelector('.size-btn.selected')?.textContent || '1920x1080';
+  formData.append('resolution', selectedResolution);
+
+  try {
+    const response = await fetch('/upload/', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (response.ok) {
+      // Создаем ссылку для скачивания
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bookshelf.png';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } else {
+      const error = await response.json();
+      bookErrorMessageDiv.textContent = error.error || 'Произошла ошибка при генерации изображения';
+    }
+  } catch (error) {
+    bookErrorMessageDiv.textContent = 'Ошибка при отправке данных на сервер';
+    console.error('Error:', error);
+  }
 }
 
 document.getElementById('generate-btn').addEventListener('click', validateAndUploadBooks);
