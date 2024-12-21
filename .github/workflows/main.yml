@@ -46,4 +46,8 @@ jobs:
         
     - name: Run Frontend Tests
       run: |
+        mkdir -p /home/runner/downloads
+        chmod 777 /home/runner/downloads
         pytest test_frontend.py -v
+      env:
+        CHROME_DOWNLOAD_DIR: /home/runner/downloads
