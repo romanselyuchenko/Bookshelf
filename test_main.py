@@ -115,3 +115,55 @@ def test_max_background_size(sample_book):
     }
     response = client.post("/upload/", files=files, data={"resolution": "2560x1440"})
     assert response.status_code == 200
+
+def test_min_book_size(sample_background):
+    """Тест минимального допустимого размера книги (100x150)"""
+    book = io.BytesIO()
+    Image.new('RGBA', (100, 150), 'blue').save(book, format='PNG')
+    book.seek(0)
+    
+    files = {
+        "background": ("background.png", sample_background, "image/png"),
+        "book1": ("book1.png", book, "image/png")
+    }
+    response = client.post("/upload/", files=files, data={"resolution": "1920x1080"})
+    assert response.status_code == 200
+
+def test_max_book_size(sample_background):
+    """Тест максимального допустимого размера книги (400x600)"""
+    book = io.BytesIO()
+    Image.new('RGBA', (400, 600), 'blue').save(book, format='PNG')
+    book.seek(0)
+    
+    files = {
+        "background": ("background.png", sample_background, "image/png"),
+        "book1": ("book1.png", book, "image/png")
+    }
+    response = client.post("/upload/", files=files, data={"resolution": "1920x1080"})
+    assert response.status_code == 200
+
+def test_narrowest_book_ratio(sample_background):
+    """Тест самого узкого допустимого соотношения сторон книги (1:2)"""
+    book = io.BytesIO()
+    Image.new('RGBA', (150, 300), 'blue').save(book, format='PNG')
+    book.seek(0)
+    
+    files = {
+        "background": ("background.png", sample_background, "image/png"),
+        "book1": ("book1.png", book, "image/png")
+    }
+    response = client.post("/upload/", files=files, data={"resolution": "1920x1080"})
+    assert response.status_code == 200
+
+def test_widest_book_ratio(sample_background):
+    """Тест самого широкого допустимого соотношения сторон книги (1:1)"""
+    book = io.BytesIO()
+    Image.new('RGBA', (200, 200), 'blue').save(book, format='PNG')
+    book.seek(0)
+    
+    files = {
+        "background": ("background.png", sample_background, "image/png"),
+        "book1": ("book1.png", book, "image/png")
+    }
+    response = client.post("/upload/", files=files, data={"resolution": "1920x1080"})
+    assert response.status_code == 200

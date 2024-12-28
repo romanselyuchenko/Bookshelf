@@ -110,7 +110,7 @@ def test_file_upload(driver, test_images):
     assert book_input.get_attribute("value") != ""
 
 def test_generate_button(driver, test_images):
-    """Тест кнопки генерации"""
+    """Тест генерации с 1 книгой"""
     driver, download_dir = driver  # распаковываем значения
     driver.get("http://localhost:8000")
     
