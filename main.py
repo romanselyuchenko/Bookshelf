@@ -80,6 +80,8 @@ async def upload_files(background: UploadFile = File(...),
     for book_file in book_files:
         if book_file is not None:
             book_image = Image.open(io.BytesIO(await book_file.read())).convert("RGBA")
+            # Добавляем масштабирование книги до стандартного размера
+            book_image = book_image.resize((BOOK_WIDTH, BOOK_HEIGHT))
             books.append(book_image)
 
     # Проверка на наличие хотя бы одной книги
