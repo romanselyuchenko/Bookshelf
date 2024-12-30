@@ -8,6 +8,8 @@ bgUploadSection.appendChild(bgErrorMessageDiv);
 
 document.getElementById('bg-upload').addEventListener('change', function () {
   const file = this.files[0];
+  const generateBtn = document.getElementById('generate-btn');
+  
   if (file) {
     const img = new Image();
     const reader = new FileReader();
@@ -28,8 +30,12 @@ document.getElementById('bg-upload').addEventListener('change', function () {
           img.height > expectedHeight + heightTolerance
         ) {
           bgErrorMessageDiv.textContent = `Добавьте изображение размером около ${expectedWidth}x${expectedHeight}.`;
+          generateBtn.style.backgroundColor = '#ff4444';
+          generateBtn.disabled = true;
         } else {
           bgErrorMessageDiv.textContent = '';
+          generateBtn.style.backgroundColor = '#4CAF50';
+          generateBtn.disabled = false;
         }
       };
     };
