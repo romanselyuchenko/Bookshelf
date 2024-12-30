@@ -145,3 +145,47 @@ def test_generate_button(driver, test_images):
     with Image.open(downloaded_file) as img:
         assert img.format == 'PNG', "Файл не является PNG изображением"
         assert img.size == (1920, 1080), "Неверные размеры изображения"
+
+def test_upload_too_small_background(driver, test_images):
+    """Тест загрузки фона меньше минимально допустимого размера"""
+    driver, _ = driver
+    driver.get("http://localhost:8000")
+    
+    # Создаем фон меньше минимального размера (1087x611)
+    current_dir = Path(__file__).parent
+    small_bg_path = current_dir / "test_data" / "small_background.png"
+    Image.new('RGB', (1087, 611), 'white').save(small_bg_path)
+    
+    # Выбираем разрешение 1280x720
+    driver.find_element(By.ID, "size-btn-1280").click()
+    
+    # Загружаем маленький фон
+    bg_input = driver.find_element(By.ID, "bg-upload")
+    bg_input.send_keys(str(small_bg_path))
+    
+    # Проверяем, что кнопка генерации стала красной и неактивной
+    generate_btn = driver.find_element(By.ID, "generate-btn")
+    assert generate_btn.get_attribute("disabled")
+    assert generate_btn.value_of_css_property("background-color") == "rgba(255, 68, 68, 1)"
+
+def test_upload_too_large_background(driver, test_images):
+    """Тест загрузки фона больше максимально допустимого размера"""
+    driver, _ = driver
+    driver.get("http://localhost:8000")
+    
+    # Создаем фон больше максимального размера (2945x1657)
+    current_dir = Path(__file__).parent
+    large_bg_path = current_dir / "test_data" / "large_background.png"
+    Image.new('RGB', (2945, 1657), 'white').save(large_bg_path)
+    
+    # Выбираем разрешение 2560x1440
+    driver.find_element(By.ID, "size-btn-2560").click()
+    
+    # Загружаем большой фон
+    bg_input = driver.find_element(By.ID, "bg-upload")
+    bg_input.send_keys(str(large_bg_path))
+    
+    # Проверяем, что кнопка генерации стала красной и неактивной
+    generate_btn = driver.find_element(By.ID, "generate-btn")
+    assert generate_btn.get_attribute("disabled")
+    assert generate_btn.value_of_css_property("background-color") == "rgba(255, 68, 68, 1)"
