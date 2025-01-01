@@ -1,3 +1,6 @@
+// В начале файла добавляем получение кнопки
+const generateBtn = document.getElementById('generate-btn');
+
 // Проверка размера фона
 const bgErrorMessageDiv = document.createElement('div');
 bgErrorMessageDiv.style.color = 'red';
@@ -43,46 +46,44 @@ document.getElementById('bg-upload').addEventListener('change', function () {
   }
 });
 
+// Создаем div для сообщений об ошибках книг
 const bookErrorMessageDiv = document.createElement('div');
+bookErrorMessageDiv.id = 'book-error-message';
 bookErrorMessageDiv.style.color = 'red';
 bookErrorMessageDiv.style.marginTop = '10px';
-document.body.insertBefore(bookErrorMessageDiv, document.getElementById('generate-btn').nextSibling);
+document.getElementById('book-upload-section').appendChild(bookErrorMessageDiv);
 
 let bookCount = 1;
+const MAX_BOOKS = 8;
 
-function validateBookSize(file, index) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const reader = new FileReader();
-    const BOOK_WIDTH = 240;
-    const BOOK_HEIGHT = 360;
-    const expectedAspectRatio = BOOK_WIDTH / BOOK_HEIGHT;
-
-    reader.onload = (e) => {
-      img.src = e.target.result;
-      img.onload = () => {
-        const width = img.width;
-        const height = img.height;
-        const actualAspectRatio = width / height;
-
-        const aspectRatioTolerance = 0.15;
-        const lowerBound = expectedAspectRatio * (1 - aspectRatioTolerance);
-        const upperBound = expectedAspectRatio * (1 + aspectRatioTolerance);
-
-        if (actualAspectRatio < lowerBound || actualAspectRatio > upperBound) {
-          bookErrorMessageDiv.textContent = `Неподходящее соотношение сторон книги № ${index + 1}. Ожидается соотношение около ${BOOK_WIDTH}:${BOOK_HEIGHT}.`;
-          resolve(false);
-        } else {
-          bookErrorMessageDiv.textContent = '';
-          resolve(true);
-        }
-      };
+function validateBookSize(file) {
+  const img = new Image();
+  const reader = new FileReader();
+  
+  reader.onload = (e) => {
+    img.src = e.target.result;
+    img.onload = () => {
+      const aspectRatio = img.width / img.height;
+      // Проверяем соотношение сторон (должно быть примерно 2:3)
+      if (Math.abs(aspectRatio - (2/3)) > 0.1) {
+        bookErrorMessageDiv.textContent = "Неподходящее соотношение сторон книги";
+        generateBtn.style.backgroundColor = '#ff4444';
+        generateBtn.disabled = true;
+        return;
+      }
+      bookErrorMessageDiv.textContent = '';
+      generateBtn.style.backgroundColor = '#4CAF50';
+      generateBtn.disabled = false;
     };
-    reader.readAsDataURL(file);
-  });
+  };
+  reader.readAsDataURL(file);
 }
 
 document.getElementById('add-book-btn').addEventListener('click', function () {
+  if (bookCount >= MAX_BOOKS) {
+    return; // Не добавляем новые поля, если достигнут максимум
+  }
+  
   bookCount++;
 
   const bookUploadSection = document.getElementById('book-upload-section');
@@ -94,17 +95,23 @@ document.getElementById('add-book-btn').addEventListener('click', function () {
   `;
   bookUploadSection.appendChild(newBookField);
 
+  // Если достигли максимума, делаем кнопку неактивной
+  if (bookCount >= MAX_BOOKS) {
+    this.disabled = true;
+    this.style.backgroundColor = '#cccccc';
+  }
+
   const newInput = newBookField.querySelector('.book-upload');
   newInput.addEventListener('change', function() {
     if (this.files[0]) {
-      validateBookSize(this.files[0], bookCount - 1);
+      validateBookSize(this.files[0]);
     }
   });
 });
 
 document.querySelector('.book-upload').addEventListener('change', function() {
   if (this.files[0]) {
-    validateBookSize(this.files[0], 0);
+    validateBookSize(this.files[0]);
   }
 });
 
@@ -123,7 +130,7 @@ async function validateAndUploadBooks() {
   for (let index = 0; index < bookFiles.length; index++) {
     const input = bookFiles[index];
     if (input.files[0]) {
-      const isValid = await validateBookSize(input.files[0], index);
+      const isValid = await validateBookSize(input.files[0]);
       if (!isValid) {
         validImages = false;
         break;
